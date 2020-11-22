@@ -1,0 +1,71 @@
+Differencet between parallen and concurrenct programming
+
+Parallel										Concurrencyt
+
+a. we use multiple cores of CPU i.e multiple process                                  a. it can run on even single core
+b. in paralel we have indepednet taskrunning on threads                                b. sharing of data or variable is there
+c. This is doing the task to enhance performance                                       c. it is solving issues that happens becuase of parallelism
+d. forkjoin pool , threads , paralel stream                                             d. eg: completable future , volatile , concurrent collections , atomic semaphores, renetrnat lock
+
+
+
+States of thread : 
+
+New Thread -> NEW
+T1.start -> RUNNABLE
+t1.wait // t1.sleep -> WAITING
+t1.join  -> block eecution until thread conmpletes -> DEAD
+
+
+Sleep puts thread in waiting state,  Wait also put thread in waiting state
+
+Wait												Sleep
+
+Thread goes to waiting state until another thread notify to make                                Thread goes to waiting state untill the time mentioned in MS and then it 
+the thread in runnable state                                                                     comes to runnable state
+
+
+- Multi tasking means a CPU is running multiple applications in different processes
+- If within the same process we are doing multitasking that would need to create and run multiple threads within the same process
+
+- We can call thread.start() instance method only once, if for same instance of thread it is called twice it throws illegalstate exception(runtime exception)
+
+- Creating thread run method implementation is better using runnable inteface, 
+	-> it allows us to still extend another class and add functionalities, if we extend thread we can not extend another class
+
+- Thread gets priority of its parent creator thread if not set
+- 1 is for minimum priority ad 10 is for max we can not set outside of this range
+- thread scheudler picks threads from thread pool of runnable state with highest pririty first 
+- default priority of main thread is 5
+
+----- yield method : static method
+		   -> allows chance for current running thread to go away to runnable state if one thread is in runnable pool of smae priority
+		   -> if priority of thread in waiting pool is lower thatn running thread than same current thread will continue
+	use case: if we have a very long time consuming task then we can do periodic yield, and if equal or higher priority thread is in runnable state,
+	 it will get kicked up and old thread will go to runnable state waiting for some time unitl thread scheduler picks him up for continuing the task
+
+--------- interrupt method
+- If we call interrupt method it actually do not interrupt , but just set interrputed flag to true
+- And if we were sleeping or joining in that thread it throws Interrupptedexception and it will break the sleep or join fronm there
+- basic purpose is that if we call interrupt on a thread instance, then kill it only if it is sleeping or joining on another thread
+	- thats why these methods throw Interruptedexception
+- if we still want to handle interruption we can use flag isinterrupted, or forcefully put try catch of interrupttedexception there
+
+- Race condition occurs when same shared resource data is maanipulated by miltiple threads and the manipulation operation is non atomic,
+	task like int x=23; is single step and is atomic and these tasks do not cause race condition even in case of multiple threads mutationg shared object
+
+- We must know that 32 bit opreations like int a=23, short b=12 are atomic but long s=23 is not as thery are 64 bit
+
+- synchronized locks on object level for instance method, meaning if same object is passed and differnet thread is shareing the object nad using its synchronized methods
+	it locks one by one for thme, but if 2 differnet objects are passed to threads then no lock will occur and no race condition occurs
+
+- Thread groups are a collection of similar task doing threads,
+	Using this we can interrupt/sleep all the threads in one line of code
+- Main method runs by main thread whihc is part of main thread group nad parent of main thread group is system whihc is the root thread group
+
+- cause of concurrentmodificationexception:
+	a. when we are iterating arraylost/collection/map and during the iteration we remove object using collection.remove method
+	b. when one thread is writing to collection and at the same time another thread is reading from the collection	, during reading it occurs
+
+- concurrent collections can be used while collections are operated among multiuple threads at the same time
+	like reading/writing among multiple threads
