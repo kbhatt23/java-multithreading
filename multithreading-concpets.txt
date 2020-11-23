@@ -69,3 +69,37 @@ the thread in runnable state                                                    
 
 - concurrent collections can be used while collections are operated among multiuple threads at the same time
 	like reading/writing among multiple threads
+
+- countdownlatch is a thread synchromizer that can be used to make one thread wait until specific amount of toher threads are done with their jobs
+	-> we could do this wiht join and wait and notify, but that will need more code to write and not easy to implement
+	-> also once countdown lathc comes to 0 .await() method do not clokc the thread anymore 
+	-> however once countdown reaches 0 latch can not be reused, we can use cyclic barrier for those cases
+
+- Cyclic barrier:
+	Same like countdown latch where one thread waits until other 2-3-n threads are done
+	however this is cysclic in nature and hence it intrdouces reusability of synchronizer object
+	This can represent master -> slaves functionality
+	where slave complete its task then awaits for more tasks from master, 
+	-> we cna even add code after await in slave an then again another cycle of tasks from slave thread its wait and master doing its task once again
+	->thats why it is called cyclic barrier
+
+- Arrayblocking queue : IT is a thread safe class that is used as producer / consumer thread synchromizer
+	-> we can sahre arrayblockingqueue and put maxcapacity to it
+	-> if we are tryign to add item to it and size is max it waits until another consumer removes items from quue
+	-> also while taking out element if size is 0 it waits until another producer puts data in it
+
+- Excahngers:
+	Excahngeer are like a synchronous queue in between 2 threads
+	-> it can be used to send data from one thread to other thread
+	Exchanger acts as a queu, if we excahgne data from one threaad to another thread and another thread is blocked or not yet exahnign the queue remain blocked
+	->so it is a mandatory 2 wayu communication where each thread exchange data to one another and if one thread is not yet started to excahnge other thread waits in theq queue till the second thread calls exchange method
+
+
+l. how is fork join different from executor service
+	a. In executor service working thread do not do both dividing the task and running the task
+	-> mostly one thread either breaks the biggesr compuatiion task or run it but can not do both, in for join same thread divides the task in 2 half, managefirst half itself and keep other first half for another thread
+	b. Work stealing: Both are based o work strealing if one thread is done it picks another thread's task, but in for join it is different
+	-> in fork join each thread have its own seperate queue, and they do the tasks untial queue is empty, in form join once this task queue is completed by one thread,
+	it starts taking task from other thread's queue
+- Default common forkjoin pool sisze is always number of procesros -1
+	as one processor is saved for main thread
