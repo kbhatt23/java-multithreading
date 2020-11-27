@@ -1,0 +1,74 @@
+motivation behind multithreading:
+a. traditional programming languages executes code sequentially
+	,however this can slow down the total time and user of application will get agitated
+	if we can somehow divide the same task into smaller task and do them in paralle using threads it can save time
+b. using multithreading we can run some process for some time and then process pauses it and then goes to another process
+this was a processor can do multi tasking or run multiple process together
+	this is called thread slicing , very useful in concurreny/single processor CPU
+c. we should be able to make threads prioritized so that bulk operation process can appen in background and with times intercal it can be yielded
+
+- A process is an indepenednt task for each application,
+	it can have multiple threads and each thread can communicate among themselves within the same process
+	every application will gets assigned a process
+	each process can have its own registers,stack,memory etc 
+	thread running inside these process can consume meory/stack.registers from within the same process
+	
+- Since threads share the same heap memory from the parent process,there are issues with race conditions in concurrency
+- threads are very lighweight process and hence creating them takes less resource than a process	
+
+- So os create individual process for each application
+	each process have its own memory/registers
+	- one process can not consume memory/register of another runing process
+	- any action/task in one application will createa  thread inside the process
+	- one process can have multiple threads whihc are light wight task of execution
+	- CPU always process threads and not process
+	- All threads of one proces sahres same memory of is process and can not use memory of another process
+	- the above functionlaity can can cause race condition as differnet threads of same process are actually mutating the heap memory of same process
+	
+- Remember the code like creating threads/runnable and executor service is concurrent programming
+	-> it do not have ability to make use of different cores of cpu,
+-> multiple threads using executorservice/thread/runnable can only be executed in same process and hence is concurrent using thread slicing
+- Forkjoin frameowkr enables us to run tasks and divide them among multiple cores using O.S native methods which traditional apis like executor service can not do
+
+- Dameon threads are low priority threads that gets ignored and removed once all the user threads are completed
+	-> this can be created by main thread or another user thread but it has low priority like garbage collection
+		, if all the user threads are gone whats the use of G.C and hence JVM ignore the process 
+		
+- Reentrant lock can be used to aquire lock for smae thread n time, however it has to unlock the same amount for other thread to aquire lock
+ - Also reentrant lock have a timeout whihc traditonal synchroized block do not have, 
+ 	this reduces chance of deadlock and even if deadlock occurs it will get resolved however it takes some time	
+- unlike synchronized block whihc waits and gets blocked for infinite amount of time, 
+	reentrant lock and semaphore comes with aquirelock method with timout, and returns true if lock was aquired otherwise false  		
+ 	
+- Semaphores can be easily used for producer consumer by just adding size as 1,
+	since if one thread producer/consumer picks it then size goes to 0 which means any other producer/consumer thread waits until lock is released 	
+	
+- Mutex is a specialization case of sempaphores with size as 1, 
+	-> this way it acts like a lock and can replace synchronized block and lock with very less code	
+- Mutex acts as a lock among multiple thread so that one resource is sharad and only one single thread can run at a time
+	, however in smepahore n number of (permit limit) can run at a time 
+	Mutex acts same like synchronization block/lock etc and sampahore is like wait and notify singal based on available permit
+	
+- Why to use executors:
+	. it helps in creating a thread pool and it saves memory as for each task we od not have to create individual threads
+		instead same thread can be used to do more task, and henc eit increases memeory and performance
+	- It also creates thread crewation and its lifecycle easy for devvleopers			
+	
+- executor service shutdown now do not shuts down at the moment right away it kills the service once all tasks are completed by tasks,
+	however shutdown now kills the service right away and taska may not be finished by then, so all threads will be interrupted and reamining tasks will be ignored	
+	
+- countdown latch once used and have gone to 0 count then it can not reused , meaning object is not resuable
+	-> instead we can use cyclic brarrier which is for master slave systems
+		-> slave can await until master is done, and again can do one more task
+		thats why name is cyclic as cycle can be repeated n number of time
+	same like countdown latch master will wait untill all slaves are done , 
+	but here slave after compeltion of theri task will also wait for master to be compoleted so that more task can be assigned
+		, hence it adds resuabaility of same object to commiunicate multiple cycles among master and slave
+			
+			
+- Delay queue is simliar to concurrent queue like arrayblockingqueu/linkedblockingQuuee
+	however in this the items are taken out on the basis of delay time set for them
+		
+- Priorityblockingqueue is same as arrayBlockingqueue/Linkedblockingqueue however the second class floolows first in first out
+	but priorityqueue uses sorting mechanism and take method returns first item of sorted items -> same like prriortyqueue
+	so blocking nature amont threads in take and put method + priorty queyue nature of reading based on sorting = prioritybloockingqueue					

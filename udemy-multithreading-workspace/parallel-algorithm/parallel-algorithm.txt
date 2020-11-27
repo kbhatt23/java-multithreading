@@ -1,0 +1,13 @@
+parallel algoruthms:
+	We try to break the bigger porblem into smaller problem and solve them individually in different process at same time
+	-> not like convurrnecy where multiple threads/tasks runs on same processor using time slicing
+	
+issues with parallel algorithms:
+a. Thread communication among different CPU cores, 
+	-> if we divide the items among different cpu cores then we have to deal with task of merging them 
+	which will take some time as threads intercommunication among different cpu cores are more time consuming
+b. Proper logical division of worke is needed,
+	eg: finding prime factors of number 0-1000 and if we split 0-500 and 501-1000 logicall it is not good
+		as for finding numbers higher among the array will take more time and hence first half will be done and will be waiting
+		-> this issue is solved in Fork join framework where work stealing happens	
+		
