@@ -1,7 +1,11 @@
 package com.learning.multithreading.forkjoin;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.RecursiveTask;
+import java.util.function.Function;
+
+import com.learning.multithreading.forkjoin.advacned.CheckingPrimeNumbersForkJoin;
 //input will be int[] or int list but result will be long of sum
 public class SummingTask extends RecursiveTask<Long>{
 
@@ -40,11 +44,12 @@ public class SummingTask extends RecursiveTask<Long>{
 			
 		}else {
 			//System.out.println(String.format("Starting sum calcualtion with startIndex %s and endIndex %s", startIndex,endIndex));
-			long sum=0;
-			for(int i = startIndex; i < endIndex ; i++) {
-				sum+=numbers.get(i);
-			}
-			return sum;
+//			long sum=0;
+//			for(int i = startIndex; i < endIndex ; i++) {
+//				sum+=numbers.get(i);
+//			}
+			return (long)numbers.stream().skip(startIndex-0).limit(endIndex-startIndex).mapToInt(i -> i).sum();
+			//return sum;
 		}
 	}
 

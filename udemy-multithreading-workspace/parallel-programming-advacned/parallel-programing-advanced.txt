@@ -1,0 +1,79 @@
+Course Git URL:
+https://github.com/dilipsundarraj1/parallel-asynchronous-using-java/tree/master
+
+- Difference between concurrency and parallel programming
+a. In concurrency we have multiple threads getting processed by same processor,
+a. In parallel programming we will have task divided and executed among multiple cores of processor
+
+b. In concurrency we have thread slicing and common data is shareda across multiple threads
+b. In parallel programming we divide the bigger task into indepenednt smaller task , execute them in multiple cores and then merge the result
+	 once all cores are done processing the individual threads
+c. Purpose of concurrency is to allow multiple task getting executed at the same time 
+c. purpose of paralle programming is to make use of differenct processor cores to take less time in processing a bigger task
+d. In concurrency generally we have shared mutation and hence synchroning is needed as
+d. In paralle programming we genrealy divide the bigger task into smaller independent trask that runs on multiple cores
+	then we merge the result togehter, like divide and conquer and fork join framework
+e. eg: executor service,threads.start and etc
+e. eg: Forkjoin framework, parallel stream(also uses fork join)
+
+- Challenges of paralle programming:
+	a. Since we have threads runing in multiple cores the time for wait/signalling/inter thread communicaiton will be slower 
+	and hence this is useful only whne there are huge chunk of data or each data takes some heavy time to process
+	b. we have partition the taks into samller task based on time and not just quantity
+		eg: factorial calcaulation of arrays, the larger number will be taking more time and henc eif task is not divided based on unit of time 
+			then one or other processor will reamin free and other processor will be doing more work
+		These issues are resolved in Fork join framework because of work stealing, once a processor is done with their taks , they steal from other processor's queuue
+
+- Parallel programming vs asynchronous programming
+a. Paralle programing want to make use of multiple cpu cores and reduce latency
+a. Async programmming is useful in microservices so that we can write non blocking fire and forget kind of code
+
+b. In paralle programming we want to reduce latency time by using multiple cores of the processor by divide and conquer and fork join
+b. in async progrmmaing we want to create non blocking code to reduce latency time	
+
+c. Paralle programing eg: paralle streams,fork join frameowrk
+c. eg of async programming: completable future,akka, rxjava etc
+a. parlele programming try to reduce latecny of calucaltion, asyn programming is useful in reducing latency of rest apis/db calls etc	 
+	 
+	 
+- How Paralle stream works under the hood:
+	a. First all the items are splitted into smaller parts -> this is done using spliterator whihc is different for each collection type
+			-> the trysplit method is used to split the total items into samller pieces
+	b. all the intermediate opreations are don on these individual parts using fork join pool, whihc wuses multi core
+	c. once all the intermediate operations are done , the collector will have merge function to merge these individual elements into single reduces element	 
+	
+==========perforance parameters==========
+
+	Data type 					operation 						sequential/Paralle				whihc one is better
+a.  arraylist vs linkedlist		sum								sequntial only					arraylist wins vs linked list insequential
+b.  arraylist vs arraylist		sum								sequential vs parapeel			paralle wins vs sequential
+c.  arraylist vs linkedlist		add one to each elelent			sequntial only					arraylist wins vs linked list insequential 
+
+overall :
+- Spliterator for arrylist is good and hence generally for arrylist the transformation/sum oepration works better in parallel than sequntial
+- Howeer since for linked list it is not easy to split items into individual parts to work in fork join
+	a task works better in sequential for linked lis than in parallel
+	
+- In parallel stream if we are using collector and spliterator then the collected list will be ordered based on its collection type charachs defined in splitertor
+	-> like arraylist will get transforemd element in ordered list, but not so on set
+	-> similarly if we use for each method to print it wont be ordered, but we can use foreachordered for that  	
+	
+- Spliterator always calls the trysplit to split the items until it is single,
+	eg a list of size 8 will get divided into 8 different elements and each intermediate operation will be added ot recursivetask of forkjoinpool
+		, work stelain make sure tasksa are done quickly, later on in reduce and collector these items are meged back
+		eg if we use reduce like -> parallelstream().reduce(2,Integer::sum) and items are 1,2,3,4,5,6,7,8 then reuslt will be 
+				2+2+2+2+2+2+2+2(for eac indiviudal element different task will add 2)+ 36(actual result)	
+				for sequential it will be 2+36	
+				
+- paralle stream do not work well when we have computation based on unboxing and boxing back, even sequential works better in that case
+
+- In executor service we have a single queue of tasks and threadpool takes it one by one and until busy newer task reqmin blocked in the queue
+- However in fork join pool we have one shared queu of task and one queue for each thread in common fork join pool
+	-> this way a if a thread is free instead of working on a new task from queue(like we do in executor servuce) we check if any other thread's queue have pending task-> caled as work stealing
+		, it picks a new taks from shared queue only if all the threads 's queue is empty				
+		
+- completable future also uses common forkjoin pools's thread that are always running and wainit in infinite loop		
+
+- A custom forkjoin pool size is number of cores by default and that is the same for commonfork join pool , but 1 thread is reamined free for main method execution
+	- one thread is left for main because even main thread not just divide the task but also participate in woking of the task in apralle streams
+		hence default commpn fork join pooo, that is used by paralle strea have cores-1 as parelism and all threads are reamined alive infinitely until jvm is running

@@ -8,7 +8,7 @@ import java.util.stream.IntStream;
 
 public class SummingTaskUsage {
 	public static void main(String[] args) {
-		List<Integer> numbers = IntStream.rangeClosed(1, 1000000).boxed().collect(Collectors.toList());
+		List<Integer> numbers = IntStream.rangeClosed(1, 10000).boxed().collect(Collectors.toList());
 		long start = System.nanoTime();
 		long sumSequential = 0;
 		for(int n : numbers) {

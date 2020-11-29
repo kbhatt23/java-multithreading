@@ -1,5 +1,6 @@
 package com.learning.multithreading.forkjoin.advacned;
 
+import java.util.Arrays;
 import java.util.concurrent.RecursiveAction;
 
 public class CheckPrimeNumberTask extends RecursiveAction{
@@ -33,9 +34,12 @@ public class CheckPrimeNumberTask extends RecursiveAction{
 			
 		}else {
 			//do the task
-			for(int i=startIndex;i<endIndex ; i++) {
-				CheckingPrimeNumbersForkJoin.checkPrimeNumber(numbers[i]);
-			}
+//			for(int i=startIndex;i<endIndex ; i++) {
+//				CheckingPrimeNumbersForkJoin.checkPrimeNumber(numbers[i]);
+//			}
+			
+			//funtional style
+			Arrays.stream(numbers).skip(startIndex-0).limit(endIndex-startIndex).forEach(CheckingPrimeNumbersForkJoin::checkPrimeNumber);
 			
 		}
 	}
