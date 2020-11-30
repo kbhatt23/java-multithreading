@@ -18,4 +18,9 @@ public class ProductOption {
 	private String color;
 	
 	private double price;
+	//inventory can be fetched from inventory serviuce based on the above option id
+	//so invenroty servuce cna be called only after product service is called and its options are fectehd
+	//for each options the invenotry will be different
+	
+	private Inventory inventory;
 }

@@ -77,3 +77,32 @@ overall :
 - A custom forkjoin pool size is number of cores by default and that is the same for commonfork join pool , but 1 thread is reamined free for main method execution
 	- one thread is left for main because even main thread not just divide the task but also participate in woking of the task in apralle streams
 		hence default commpn fork join pooo, that is used by paralle strea have cores-1 as parelism and all threads are reamined alive infinitely until jvm is running
+		
+- Completablefuture is a way of wring non blocking asycnhnous code in functional way
+	-> removes limitation of future and it internally uses forkoin poool common pool and hence improves perforamnce and can use multiple cpu cores		
+	- in short it is reactive asynchrnpous way of wrining funcitonal code in java
+- Completable future shares similar features to reactive programming like writing non blocking code and if listenre is not there then ignoring it etc	
+
+- Reactive programming features
+	a. Responsiveness: able to write non blocking code with option of future/callbakc to get result once that task is done,
+		this way we can unblock main thread whihc can do other task
+	b. elastic: Since we are using forkjoinpool , task ca be divided among multiple thread and threads can sacle up and down based on need
+	c. resilience: we can consider error case also as first clsas citizen, meaning on error we can still give a repsonse and continue wiht functional chaining
+	d. message driven : If there is no listener do not even send data back -> like if we do not call .get method the compeltionstage will be ignored
+	
+	- responsiveness is done using asyn non blocking code using suppluasyinc and other compeltionstage ,methods
+	- elastic: this is taken care using smart fork join common pool
+		-> this pool can increas/decrease and smartl somtime skip creating new thread and runnig in main method itslef
+	- resillience: This is done using handle and exceptionally methods,
+		 making error case as if no error came by sending default value to next mehtod of pipeline
+	- message drive: since one method of pipeilein sends message to another one and so on as sson as data is available
+		 		this intrdocues message driven system in java
+		 		
+Exceptionhandling techniques:
+a. handle: we get success resposen and eception object bott
+		-> gets called for both success and failure case
+		-> we can even return some value in case of exceptio or even return value in case of success
+b. exceptionally: it gets executed only when we get excpetion at any level of pipeline of completable future
+	-> we can return a recovery value whihc will gets passed to next method in pipeline of future just like handle
+c. whencompletet: this method is acting jus tlike a logging statment method
+	-> just like ahdnle we get both result and exception object and hence will get executed on both successand failure case					 		
