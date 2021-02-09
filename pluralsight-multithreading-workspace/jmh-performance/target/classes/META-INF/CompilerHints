@@ -1,0 +1,9 @@
+dontinline,*.*_all_jmhStub
+dontinline,*.*_avgt_jmhStub
+dontinline,*.*_sample_jmhStub
+dontinline,*.*_ss_jmhStub
+dontinline,*.*_thrpt_jmhStub
+inline,parallelstream/jmhbasics/JMHBenchmarkingPrimeNumbers.generatePrimeUsingLoop
+inline,parallelstream/jmhbasics/JMHBenchmarkingPrimeNumbers.generatePrimeUsingLoopWithNoResize
+inline,parallelstream/jmhbasics/JMHBenchmarkingPrimeNumbers.generatePrimeUsingParallelStream
+inline,parallelstream/jmhbasics/JMHBenchmarkingPrimeNumbers.generatePrimeUsingSequentialStream

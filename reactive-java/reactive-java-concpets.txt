@@ -1,0 +1,29 @@
+The needs in current genration for web sites are changed:
+a. there can be different device calling same apis hence number of users is incrased hugely
+	this is called throughput meaning how many max users we can server at any time
+b. high responsiveness: if site do not respond fastly clinet gets tired and wtich to another site
+	meaning site has to be responsive
+c. high resilience: should handle even in error case
+d. scalable : meaning based on load should scale up or down
+	this saves money from server side
+
+all these proeprties are there in reactive programming to solve issues with modern sites:
+a. responsive: 
+	should repsond fastly to client, even though we ight not have whole data but just provide some data to client
+	this can be done using backpressure
+b. resilient: handle errors gracefully and consider them first class citizen
+c. message driven
+	each componet should interact using events/messages making it loosely coupled
+	also async programming can be done easily with this
+d. elastic:
+scalable based on load, saves money and also able to hanlde huge requests from client
+
+RX java is based on PUSH based mechanism ,
+	 but project reactor is two way push from publisher and pull from subscriber , 
+	if any subscriber do not remain live then publisher do not even sends message
+
+- unlike project reactor , RX java api is synchornous by default , but we can make it async and reactive when needed
+
+- iterator is similar to observable
+	iterator pulls the data from actual data source(could be list,set,enum,D.B anything)
+	observable pushes the data to subscriber, same data handling but in oppiste direction
