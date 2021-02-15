@@ -27,3 +27,127 @@ RX java is based on PUSH based mechanism ,
 - iterator is similar to observable
 	iterator pulls the data from actual data source(could be list,set,enum,D.B anything)
 	observable pushes the data to subscriber, same data handling but in oppiste direction
+
+
+- Same like FLux and mono we an have multiple observer in rx java
+a. singleobserver: when observer looks for single item only
+	we have observable/data source as single as well as observer that can handle single data
+b,. Maybe: in case trhere could be 0 or 1 data avaialble
+	same likle above we can have maybeObservable as well as MaybeObserver
+c. completable : in case observable do not emit data
+	eg runnable,  we want to run some task and send success message once done
+
+- Purpose of dispse method
+	once all data is sent from observable to observer the oncomplete method is called
+	this cleans ups the obaservable and observer so that G.C can happen
+ however in cae of infinite sending stream from observable sometime after soe time observer may want to unsubscribe from it
+
+	call the dispose method from disposable instance to unsubscribe from observable
+
+categories of operators:
+a. suppresers: whihc reduces quantity of data with no cahnge in datat type
+	eg: filter,take,skip, takewhile,skipwhile
+b. transformer : 
+c. reducers:
+	these oprations reduce the Observable toa  single element observable
+	like Maybe in case of count,reduce aslo gives maybe
+	these single element observable can be used for subscription
+
+d. debugging action operarttors:
+	like donOnNext ,doonsubscribe doonerror : can be used in debugging
+
+joining two or more observables into a single observable:
+a. merge: joins 2 or more observables into single
+	but theorder sequence is random meaning it wont happen that first all items of first observable comes and then only second observable items will show
+b. concat with: preserves the order
+	first allof items of 1st observable comes and then second and then third and so on
+	eg 1,2,3,4,5.merge 11,12,13,14 -> 1,11,2,12,3,13/...so o
+	same with concat-> 1,2,3,4,5,11,12,12,14...
+	in case of sequential streams like without delay elements the result of merge and concat will be same as that of concat
+	however in paralel async mode(with delay elements) the result will differ as suggested
+
+flatmap and concatmap are same
+	but in flatmpa sequnce is nto amintained and in concatmap sequnce for inner items are maintained based on outer items
+
+- rxjava's amb method is same as compltablefuturee.anyof
+	out of the two stream whatever is faster is passed to subscriber and other one is rejected/disposed
+- We can make concurrency in emitter using Thread/completablefuture but that breaks the contract api rx java provides
+	--better use schedulers provided by rx java
+
+types of schedulers:
+a. computation intensive : Uses thread pool so no need to create threads at the begining or kill them once subsriber is done fetching data
+	threads= number of cpu cores
+
+b. io intensive:  Uses thread pool so no need to create threads at the begining or kill them once subsriber is done fetching data
+	threads > number of cpu cores
+c. new thread scheduler: Create a new thread for each observer like the example we did, once task i sdone for the subscriber the thread will be killed
+	same like newThread.start inside the emitter lambda while creating observable
+d. single: runs on same thread sequentially
+e. exectureserviec: pass the executor service to get thread poools accesible for scheuler task
+	the threads present in executor created pool  will be used to process the observers
+
+- unlike java streams in case there are more than one onsubsribe/onobserve method
+	the first one in the chain is considered
+	but in java stream the last one is considered
+- methods to switch the scheuler type 
+	a. subsribeON(scheudler): for this the position matters
+		if a pipeline contains more than one operations and for each opration we have different subscribeon then 
+		the whole chain will use the first scheule technique others will be ignored
+	b. observeon(Scheuler): 
+	this can help us have different scheuler technique for different part of same pipeline
+	
+- however observeon can cause performance issue
+
+- Incase there is single observer and we are using rx java schedler still it will use single thread sequentially by default
+	only if observers are more it consider using multiple threads form the pool/cache/executor service
+	however using flatmap we can make a single observer run individual slow tasks concurrently
+	but even this approach is to good and for one observer is is better to use signle thread sequentially
+
+- we can use replay/cache incase we want to repeat a data flow from soruce to sink
+	specially helpful if we have a network call from source to sink, first time it puts in cache and next time it takes data form cache untill cache is cleared
+
+replay is like a cahce in case of connectableobservable if observer comes late than it gets data from beginining
+	replay(): gets data from first emision for late observer
+	replay(2): gets data from the last 2 elements and then continues
+	replay(2,Timeunit.seconds): gets data from the last 2 seonds before the latest item currnetly running
+Caching behave in same way however it is easier to implement
+
+we must understand caching and replaying is useful when the observable soruce gets the data from web call whihc is slow and hence we can cahce the content
+
+Subject interface extends both observable and observers and hence can act as both
+	by default subject are hot listners meaning if multiple soruce are pushing data it listens to only first one and other source data is lost
+
+subjects are good in case we have multiple sources and need to streamline into single consumer
+	however they are not thread safe
+
+- Flowable is same like observable but with extra back pressure support
+
+- buffer means instead of sending on next event ont by one it sends data in chunks
+	buffer(int size) once size reaches "size" then an arraylist is send to the observer
+window is same as buffer however instead of returning observable of collection it returns observable of observable
+	we can flatmap and collecto some list in that case
+
+- throttling means based on logic we can ignore few items sent by observable/data source
+	like if every 200ms a data is comming we can throtle it based on time that we accpet item and then skip until 1 second and so on
+
+- in case production from observable is fast and subscriber is processing it slowly
+	a. if it is sequential then no issues no need of backpressure
+	b. in case we are sunig observe on and pass scheduler then source is actually hanbding over the task of data sending in seprate threads
+	and if data is huge observer wont be able to handle it and may cause issue
+	this can lead to out of mermory error if we do nt handle in backpressure
+	just for a demo the observeon causes issue but not subscribeon as later will make whole pipeleine to be concurrent using multiple threads
+
+- The thing with observeon is that the tasks running before it was runing in seuqntial and hence untill whole items are not done with that
+	the later part of chain which is running in paralelle can not start
+	this will make the consumer to bombard and can cause out of mermory error if it is slow
+this can be handles using Flowable(data source) and subscriber(data consumer)
+
+backpressure ensrures that a max limit of data is first passed from flowable to subscriber then only it again start producing new data , like giving data in batches
+
+- Flowable is more useful in below cases 
+	a. there are huge amount of data in source
+	b. we have complex concurrency logic like observeon(some part of pipleine in sequnctial or different thread schedulers)
+
+- Observavbe is usedbul in below cases
+	a. if data is less and have very few transforamtions
+	b. we are using simple oncurrency like subscribeon(same thread scheulder or sequential for whole pipeline)
