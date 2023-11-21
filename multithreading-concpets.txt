@@ -5,7 +5,7 @@ Parallel										Concurrencyt
 a. we use multiple cores of CPU i.e multiple process                                  a. it can run on even single core
 b. in paralel we have indepednet taskrunning on threads                                b. sharing of data or variable is there
 c. This is doing the task to enhance performance                                       c. it is solving issues that happens becuase of parallelism
-d. forkjoin pool , threads , paralel stream                                             d. eg: completable future , volatile , concurrent collections , atomic semaphores, renetrnat lock
+d. forkjoin pool ,  completable future threads , paralel stream                                             d. eg:future, volatile , concurrent collections , atomic semaphores, renetrnat lock
 
 
 

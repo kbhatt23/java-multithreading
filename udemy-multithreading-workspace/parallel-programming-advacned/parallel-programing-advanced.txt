@@ -1,6 +1,26 @@
 Course Git URL:
 https://github.com/dilipsundarraj1/parallel-asynchronous-using-java/tree/master
 
+how hardware and software industries have evolved recently
+
+Hardware											Software
+
+a. While doing vertial scaling of processor(increasing speed of single processor)            microservice architechture, lets have multiple apis
+   it was gtting costlier so scientist came up with horizpntal scaling                       one api exposed will be using multiple different apis and call is 
+	meaning multiple cores in process, whihc is cheaper and still faster                  done via HTTP
+
+b. dev must learn to utlize all the multiple core to maximum                                 dev must write non blocking i/o code so that at once multiple apis can be called
+	to increase performance and reduce latency                                            in mean time we can do some other code until third party is done and we merge theri code
+
+c. parallel streams api, fork join framework api                                              completable future api, rxjava, etc
+
+d. paralle programming paradigm                                                              asynchronous programming paradigm
+
+	common theme: multiple threads,fork join pool,, functional style programming
+
+why we need paralle and async programming 
+- because of hardware and software upgradation in recent year we must adapt to become higly perforamnt with less cost
+
 - Difference between concurrency and parallel programming
 a. In concurrency we have multiple threads getting processed by same processor,
 a. In parallel programming we will have task divided and executed among multiple cores of processor
@@ -15,6 +35,13 @@ d. In paralle programming we genrealy divide the bigger task into smaller indepe
 	then we merge the result togehter, like divide and conquer and fork join framework
 e. eg: executor service,threads.start and etc
 e. eg: Forkjoin framework, parallel stream(also uses fork join)
+
+Architechture of executor service/thread pool
+- We have two queues one is blocking queue(thread safe queue like arrayblockingqueue) and other one is completion queue
+	When a task is submitted to executor service it puses as a producer to blocking queeu,  a future object is returned
+	one of the thread whihc is free (acting as a consumer) will pick this and run the task 
+	once the task is done it pushes the result to the completion queue
+	when cliet cals future.get it takes the value frm the completion queue
 
 - Challenges of paralle programming:
 	a. Since we have threads runing in multiple cores the time for wait/signalling/inter thread communicaiton will be slower 
@@ -35,13 +62,18 @@ c. Paralle programing eg: paralle streams,fork join frameowrk
 c. eg of async programming: completable future,akka, rxjava etc
 a. parlele programming try to reduce latecny of calucaltion, asyn programming is useful in reducing latency of rest apis/db calls etc	 
 	 
-	 
+
+- in fork join framework it is upto dev to decide the single batch size (where solvable task is done sequentially)
+	, however in parallel stream it gets divided until single element is reached, and operation of stream happens to each of these elemnets sequentially
+	and then forked to merge	
+ 
 - How Paralle stream works under the hood:
 	a. First all the items are splitted into smaller parts -> this is done using spliterator whihc is different for each collection type
 			-> the trysplit method is used to split the total items into samller pieces
-	b. all the intermediate opreations are don on these individual parts using fork join pool, whihc wuses multi core
+	b. all the intermediate opreations are done on these individual parts using fork join pool, whihc wuses multi core
 	c. once all the intermediate operations are done , the collector will have merge function to merge these individual elements into single reduces element	 
 	
+in short only the intermediate operation tasks are done in parallel, and the forking(spliterator) and joining (collector or reduce) are done in single thread
 ==========perforance parameters==========
 
 	Data type 					operation 						sequential/Paralle				whihc one is better
@@ -67,6 +99,8 @@ overall :
 				
 - paralle stream do not work well when we have computation based on unboxing and boxing back, even sequential works better in that case
 
+- In case of no intermediate operation parallel stream perform worse than sequential
+
 - In executor service we have a single queue of tasks and threadpool takes it one by one and until busy newer task reqmin blocked in the queue
 - However in fork join pool we have one shared queu of task and one queue for each thread in common fork join pool
 	-> this way a if a thread is free instead of working on a new task from queue(like we do in executor servuce) we check if any other thread's queue have pending task-> caled as work stealing
@@ -77,11 +111,14 @@ overall :
 - A custom forkjoin pool size is number of cores by default and that is the same for commonfork join pool , but 1 thread is reamined free for main method execution
 	- one thread is left for main because even main thread not just divide the task but also participate in woking of the task in apralle streams
 		hence default commpn fork join pooo, that is used by paralle strea have cores-1 as parelism and all threads are reamined alive infinitely until jvm is running
-		
-- Completablefuture is a way of wring non blocking asycnhnous code in functional way
+	
+
+==============================completable future===========================
+	
+- Completablefuture is a way of wring non blocking asychronous code in functional way
 	-> removes limitation of future and it internally uses forkoin poool common pool and hence improves perforamnce and can use multiple cpu cores		
-	- in short it is reactive asynchrnpous way of wrining funcitonal code in java
-- Completable future shares similar features to reactive programming like writing non blocking code and if listenre is not there then ignoring it etc	
+	- in short it is reactive asynchrnpous way of writing funcitonal code in java
+- Completable future shares similar features to reactive programming like writing non blocking code and if listener is not there then ignoring it etc
 
 - Reactive programming features
 	a. Responsiveness: able to write non blocking code with option of future/callbakc to get result once that task is done,

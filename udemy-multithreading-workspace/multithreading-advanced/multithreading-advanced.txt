@@ -52,7 +52,7 @@ c. we should be able to make threads prioritized so that bulk operation process 
 - Why to use executors:
 	. it helps in creating a thread pool and it saves memory as for each task we od not have to create individual threads
 		instead same thread can be used to do more task, and henc eit increases memeory and performance
-	- It also creates thread crewation and its lifecycle easy for devvleopers			
+	- It also creates thread creation and its lifecycle easy for devvleopers			
 	
 - executor service shutdown now do not shuts down at the moment right away it kills the service once all tasks are completed by tasks,
 	however shutdown now kills the service right away and taska may not be finished by then, so all threads will be interrupted and reamining tasks will be ignored	
