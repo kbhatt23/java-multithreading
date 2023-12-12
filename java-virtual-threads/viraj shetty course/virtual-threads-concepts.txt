@@ -1,0 +1,463 @@
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman
+
+- Virtual Threads are managed by JVM directly unlike Threads which were scheduled and managed by Operating system
+- Virtual Threads are super light weight and is managed directly by JVM
+  It reduces the cost by huge margin for same load specially for highly concurrent applications
+  It increases the efficiency of the concurrent applications and hence less machines will be used for same load of users
+  hence reducing the cost
+
+- Most of the concurrent applications were managed using Threads
+  and threads have a lot of issues and hence it caused a huge rise in reactive programming
+  reactive programming is functional programming + highly scalability using threads
+  but it was very hard to read and manage specially
+  it is because in functional programming exceptional handling logic was different
+  and in systems having huge exception handling it was tough to manage, hence reducing code maintainability and increasing code cost  
+  
+- Virtual Threads solve this problem of reactive programming as code is almost same as sequential programming
+  hence same benefits as that of reactive programming + no issues with code readability and maintainability
+  
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman
+
+- Java has beed in the industry since more than 25 years, and its main charachterstic is simplicity
+  since its inception it had simple way to create threads but creating too much is the problem
+  java platfrom threads had scalability issues meaning to handle more task we need to create more threads
+  and creating more threads require more memory + too much context switching
+  
+- Ways of handling requests in web server
+a. process per request: in early 1990s we used to server each request with its own process
+   this process runs a perl/c script and serve the client request
+   this same process assigned to single request user will do all job: business logic + db calls + other api calls
+   once the same process completes the task , process is destroyed
+   this term is known as CGI: common gateway interface, it is still used but very heavy as it uses one process per request
+   hence it requires very very powerful machines and is very costly
+   issues with CGI/process per request
+   a. since memory of machines are limited scalabilty to handle large concurrent request is bad
+   b. every request it creates new process and creating a process is time consuming hence performance is also not good
+      also no pooling as after processing each request process is destroyed
+   c. Since each task is different process nothing can be shared among them
+      eg: databse connection, memory etc can not be pooled   
+b. thread per request model
+   in web server there is a thread pool and for each request one single thread is assigned end to end
+   meaning for each request one thread work on cpu tasks + io tasks: during io tasks it sleeps
+   thread is light weight in comparison to os thread or process hence more concurrency is achieved
+   in comparison to CDI this has more scalability and concurrency
+   plus thread pool is created and hence latency is reduced as new process is not created not even thread
+   also data like memory, db connections, socket connections can be now shared among these threads running inside single process   
+   
+- OS allocates 1MB space per thread specifically for the thread stack. even though it might not be used
+  it is because java platform threads actually create OS threads
+  and OS thread need specific allocated memory which is why it allocates 1 MB per thread
+  basically one java platform thread creates one OS thread each having 1 MB allocated space just to allow OS thread to work on
+  Thread scheduling is not managed by JVM , completely owned by OS as actual worker is OS thread
+  and there is one to one mapping b/w java threads and OS threads  
+  In case web server is doing IO operation that this thread actually holding 1MB space and actual OS thread resources is of no use
+  the java thread and OS thread are basically eating memory and other resources with no use during IO operations
+  While running java code we can define stack size using -xss and for heap , -xmx and -xms
+- One way to scale is to create more threads but since java threads are equivalent to OS threads
+  and OS threads require lot of resources hence we should pool the threads by creating thread pools for efficient machine resources  
+  
+- idea is that we should not assign the thread for entire service of a web server request
+  as most of the operations it is IO bound meaning CPU was free but only memory was full due to max threads we can create
+  hence good idea is to be able to create threads that work until it does and switch to another task if IO operation or blocking operation is going on
+  this thread can resume the job once that IO task is unblocked  
+  
+- We do below solutions to solve thread scalability and be able to hadnle more requests
+a. vertical scaling: very costly and has a limit as computer have max limit possible
+b. horizontal scaling: relatively less costly but have efficiency issues like IO task efficiency or resources  
+   this means it is very bad to keep on increasing the nodes and servers if our application is not effectively using resources of single machine
+    it is just adding up cost and we can reduce this cost by effectively usingn single machine hence number of nodes can be reduced to handle same load
+	
+- Hence for very highly scalable systems we must optimize the single VM nodes
+  so that we need lesser number of nodes to actually handle same load and hence reduce cost of infrastructure	
+  
+  om shree ganeshaya namah
+  om shree sita rama lakshman hanuman
+  
+- JDK architechts have designed the use of virtual thread for simplicity
+  the user developers will find it very easy to use but it hides very complex implementation under the hood
+  
+- Virtual Threads are daemon threads hence in simple java class main thread shall not die
+  but once main method completes it dies hence use countdownlatch to wait main just to see the demo
+- name of virtual thread follows a conventions: Thread.currentThread() will print
+  virtualthread-{virtual thread id}/os thread name
+  here os thread will be a forkjoin pool but not common fork join pool
+  each virtual thread will be assigned with one of the OS thread which is actually a fork join thread  
+  
+- In case of Virtual Thread we have 2 threads
+  one is virtual thread and other is carrier thread or platform thread
+  each virtual thread will need platorform or carrier thread(fork join pool in our case)
+  so when there is cpu task going on: carrier thread is assigned to virtual thread
+  during io block time virtual thread is sleeping but the platform thread/os thread is freed
+  then the platform thread is free to work on any other task but virtual thread is blocked
+  the moment blocking task is over the scheduler will now assign the platoform thread to now free virtual thread
+  hence in log u will always see the virtual thread id is same but most of the times the carrier thread id is different
+  it is because virtual thread sleeps during io/block time but platoform/carrier thread is free to do other job
+  once virtual thread comes out of sleep when io/block call is done thread scheduler assigns one of the platform thread to it
+  and during continuation time the carrier thread can be different  
+  
+- Java Platform threads and Java virtual threads have same methods
+  only difference is under the hood implementation, contract is same but not the inner implementation  
+  
+- Methods to create virtual threads
+a. Thread.startVirtualThread(Runnable r)
+   can create a virtual thread but without user specified name
+   Generally it is good to give user thread a name as it is helpful in debugging
+   debugging like thread dumps, profiling etc
+b. Thread.ofVirtual : using builder approach we can provide name and other config also
+   however builder appraoch is not perfect as it is not thread safe
+   if same builder object is used by multiple threads can cause issue
+c. ThreadFactory: this approach is same as above as it is created using builder
+   but this is thread safe and hence better
+d. Using Executors methods
+   Typically java developers creates platform thread usign reusable pool of threads using executor service
+   however in case of virtual thread we do not need upper bound or infact no pool needed
+   we can use executor service method newVirtualThreadPerTaskExecutor or other approaches
+   no need to have upper bound as virtual threads are cheap and super light weight
+   Virtual Threads are very very low on memory + creation of virtual threads takes less time and clock by CPU
+   hence no upper bound needed
+   using above method of Executors it keeps on creating new virtual thread for each task submitted using submit method   
+e. above approach do not give any name to the virtual thread
+   for specific name we can use:
+		ThreadFactory threadFactory = Thread.ofVirtual().name("custom-executor-", 1).factory();
+        try(ExecutorService executorService = Executors.newThreadPerTaskExecutor(threadFactory)) {   
+
+- Current Limitations of virtual threads
+a. during synchronized block if there is a thread sleep or any IO operation then the platform thread is not freed
+   so until the IO operation is complete no other thread can aquire the lock
+   this is expected to be fixed in future java releases
+   Note: in case inside synchronized block there is CPU intensive operation then no issue
+   this issue with synchronized block is troublesome only for IO bound operations inside synchronized block
+   workaround: instead of synchronized keyword use Lock interface implementation   
+   using Lock interface implementation even if there is IO operation inside , the carrier thread will get freed for other task
+   and this carrier thread will continue once IO operation is completed
+   Note: To support this all the jdk internal classes are updated to use Lock instead of synchronized keyword
+   
+b. This scenario is very rare
+   in case we are using one of the native method written in C, and if that method is using java methods
+   then if there is blocking IO call then the platform thread wont be freed   
+c. Even though virtual threads are super light , we still should create optimal amount
+   so that the resources of machines are properly utilized
+   never use thread local with virtual thread 
+   no deep recursion
+d. JDK internal tools like JConsole, JVisualvm , profilers etc are not updated to support virtual threads
+   It is because unlike platform threads , virtual threads will be in millions
+   how will we show this in GUI tool is a big challenge
+e. structured concurrency is still in preview mode   
+
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman
+
+- We can demonstrate virtual threads non blocking behavior of carrier threads using below blocking IO scnearios
+a. Socket read/write: network socket read/write
+   eg: DB calls, Redis calls, REST API calls etc
+b. File read/write
+c. Lock aquiring etc
+   one thread is blocked to get the lock free from another thread who has aquired
+   this is still wait/block for second thread, and if it is virtual thread then it can free the underlying carrier platform thread
+
+- Virtual Threads are supposed to be scheduled by JVM
+- Platform Threads are scheduled by OS scheduler
+
+- If we use virtual Threads then we can demonstrate that only few platform threads are used to handle 1000s of concurrent users   
+  we can view this in JConsole
+- Virtual Threads can be used with futures,executorService,completablefuture to become very strong
+
+- Remember that to enhance performance we still want to use futures and completablefuture
+  the thread scalability issue is fiexed using virtual thread but performance can still be optimized
+  eg: method(){
+     api1call();
+	 api2call();
+  }
+  using virtual threads we are able to handle more concurrent users in non blocking fashion with cheap resources
+  but api1call and api2call will happen sequentially and wait
+  for this we can use combination of virtual threads and completablefuture/future
+  
+- Using Completablefutre and Future with executors from virtual thread pool is good
+  as now we can even call join blocking method and since only virtual thread is blocked, platform thread is free
+  this makes it easier to understand and handle complex scenarios
+
+- Since Virtual Threads are cheap and super light weight we generally create a lot of them
+  unlike platform thread where we used to control creating too macny by using thread pool
+  for virtual thread no need to create thread pool but this causes a new problem:
+   -> managing virtual thread in terms of memory
+   This is helped by structured concurrency
+- Typically synchronous code is structured and sequential
+  it creates a structure of blocks and easy to understand and visualize
+  same is not correct for multi threaded concurrent code
+  some block may be executed in same thread some may be in another thread and maybe at later point of time
+  basically in concurrent code there is no structure as to what will execute where and when
+  Earlier in old programming language like c we used to have go to statements
+  this causes unstructured behavior even in sequential/synchronous code:
+  hence goto statements are not used in java and other programming languages  
+  but this is still present in concurrent program,
+  this unstructured behavior makes it very tough to understand/maintain and causes a lot of bugs
+  the structured concurrency provides classes that can ensure that the block of code gets executed and completed within time
+  hence no memory leak in virtual threads, specially when we are creating a  lot of them
+  structured concurrency provides structure to concurrent code in java specially helpful for virtual threads
+  ensures that the code block will get started and compelted within some time so that there is no memoyb leak
+  ensuring this memory management helps in case of virtual threads as we create a lot of them
+  also adds code readability/maintainability as code is more structured
+  eg: try with resources in executorService is basic example of structured concurrency
+  once the block ends close method is called which blocks the user thread untill all tasks are done
+  as close method calls shutdown and awaittermination method with a default timeout of 1 day
+  -> in jdk 21 the ExecutorService interface extends AutoCloseable for this purpose  
+  this try with resources is good example of structure concurrency but not good enough
+  lets say in block of code we have 2-3 futures , if one fails there is no point main thread blocking and waiting for other future threads to complete
+  inface of one future task gives error other worker threads should stop working and main thread should also be unblocked
+  this way we are saving memory and cpu time for both worker as well as main thread
+  what is needed here is if any of worker thread fails , error notification shall be sent to other worker threads
+  worker threads should stop working and then the main thread shall be unblocked
+  also if some other threads interrupts or cancel main thread its worker threads shall also be notified and closed
+  this way we are saving cpu time and memory also in efficient way  
+  
+- Structured concurrency can be used with either platform threads or virtual threads  
+
+- Steps/Flow in structured concurrency
+
+a. main thread start concurrent scope/block
+b. within the block/scope children threads are created
+c. joinpoint is received within the scope/block
+d. main thread merges all the data from all the children thread
+e. scope/block closes
+use cases as to when joinpoint is received
+a. When all the task completes succesfully, so that main can combine results
+b. When first error is received, so that other threads can be stopped and scope closes to unblock main thread
+c. when first child sends success message: like anyof
+   in this case once first success response is received all other children should be stopped
+   and main scope closes so that main is unblocked
+d. custom : when to receive the joinpoint   
+
+- in java there is no force cancelling or shutting down a thread
+  there is thread termination: which actually means a signal to thread to clean up resources and shutdown
+  meaning graceful shutdown: either usig try catch with InterruptedException or using isInterrupted flag
+  first clean the resources and then die is what it means and is good
+  same concept is there for virtual and platform threads
+  
+- scenarios where thread interruption is needed
+a. user selects cancel in middle of task completion
+   so parent thread can interrupt worker thread do interrupt but gracefully: clean up resources first before dying
+b. structured concurrency cases when block joinpoint is received we must terminate children worker threads
+c. when server is getting shutdown: so graceful killing of threads must happen   
+
+- How thread interruption works
+a. interuptor calls interrupt method of thread
+b. if the worker thread has Thread.sleep, join methods
+   then automatically the interruptedexception is thrown
+   so if a worker thread is having code like sleep or join, then interruptor can interrupt 
+   and exception is thrown and task is closed and thread dies
+c. if worker thread do not have sleep or join method but actual work
+   then in code on periodic timing isInterrupted flag is used to stop the working   
+   
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman   
+
+- Classes involved in structured concurrency
+a. StructuredTaskScope: To implement scope: blocking : it is better to use this instead of ExecutorService
+b. Subtask: Each Worker task within the structured scope
+   when using scope when we fork it returns Subtask instance
+   similar to Future but it uses virtual thread factory by default
+   each task submitted using fork in scope will get assigned a virtual thread
+   just like newThreadPerTaskExecutor, keeps on adding one thread to each task submitted
+
+Usage of StructuredTaskScope: end of try with resources means the joinpoint
+1. Default: Joinpoint is received once all the threads are completed,
+   meaning once all worker threads have completed their task the main thread will be freed and children thread dies
+   does not matter succesful or failure in case of worker threads
+   meaning all children threads will die and main thread will be unblocked only after all tasks are done
+   once all tasks are done and try with resources is completed
+   all worker task threads will get interruption event, and main thread will get unblocked too
+   in case main thread was interrupted before the scope completes , all the children threads will also be interrupted
+   can use joinUntil in scope if want a timeout
+   in case of timeout , children threads will also be interrupted for cleanup
+   
+2. Shutdownonfailure:
+   We have to use scope object in try with resources as StructuredTaskScope.Shutdownonfailure
+   if we use this then on join it blocks untill any one thread task fails
+   this is important in scenarios when all the subtasks shall be succesful
+   and in case any one fails, we must interrupt and stop other working tasks
+   scenarios: a. in case all tasks are succesful no issue join blocks untill all tasks are succesful
+   b. in case any one of the task fails join is unblocked and interrupt is done for other thread tasks   
+   
+3. ShutDownonsuccess
+   join is blocked until first task is done, for other tasks interrupt events is sent
+   scenarios:
+   a. any one of the subtask sends success response: all other subtask will be interrupted and join is unblocked
+   b. if one of the task fails, it keeps on waiting untill another task send success   
+      worse case will be when none of the task sends success: in this case exception will be thrown	  
+
+4. Create Custom JoinPoint
+   lets say we wanted api response from 2 APIs and then find average from these 2 for final response
+   we can not use any other oob provides scope but need to create custom
+   we could have chosed to wait for all the subtasks beeing completed
+   and then would have found best 2 and then the averagte but that wont be efficient
+   we should be interrupting once best 2 are found so that threads are cleaned
+   just extend the StructuredTaskScope class
+   
+- Remember that the structured scope works pretty well even in nested subtask
+  if parent join got an error , it sends interrupt event to its own children subtask
+  if any of these subtask is also having structured scope then those subtasks will also be interrupted
+  so cool!!!
+  
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman
+
+- If we are creating infinite virtual threads which is fine and good
+  but this can cause memory issues while using in conjunction with ThreadLocal
+  ThreadLocal can be used in Platform as well as Virtual Threads
+  Scoped Values were created to solve the issue with ThreadLocal in case of Virtual Threads
+
+- Structured Concurrency and Valued Scopes both are preview features in jdk 21
+
+- Generally variables have scopes based on where they are defined
+  eg: field level, method level, block level, loop level, exception block level
+  so thats how we declare variable scopes
+  but generally they are common across multiple threads
+  meaning if we create 4 threads , pass same object to it, then same fields scope is there for all threads
+  ThreadLocal are data types that are scoped locally to each thread
+  each thread have its own copy and other thread can not view other thread's copy
+  a lot of time developers hesitate to use this but internally frameworks use ThreadLocal  
+  
+- Benefit of ThreadLocal is that each thread will have its own copy
+  modification of one thread wont affect other thread's modification
+  hence no need of synchronizing specially for operations on ThreadLocal  
+  
+- If we create a Thread and then within that Thread another nested Thread
+  the parent's ThreadLocal wont be visible to the nested Thread
+  in case we want nested Thread to be able to access the scope of outer Thread's ThreadLocal
+  -> we can use InheritableThreadLocal  
+  how it is implemented is that the parent thread and children thread have same copy of object
+  hence modifying in main will reflect in children, modifying in children will reflect in parent
+  however due to this race condition can occur and synchronization will be needed
+  we can make this different copy to be thread safe and value not modifyig each other
+  -> by extending InheritableThreadLocal class and override the methods
+  
+- Disadvantages of ThreadLocal
+  a. It allows mutability anywhere, we set in one thread and anywhere within this thread it can be mutated
+    obviously in another thread it will have its own copy so changes wont get reflected
+    but using same thread we can mutate it to another object at n places
+    now the stored object's field can still be modifiable but thats no a big issue, it can be solved by using records
+  b. ThreadLocal data remains in heap until thread dies
+     this can be dangerous and cause memory leaks
+     only when developer call remove method then only the internal map is cleared
+     if developer forget to call remove method then it remain in heap and cause memory leak
+     big concern is specially using Platformm Thread
+     when we have thread pool which continusoly working , each ThreadLocal inner data wont be cleaned, until remove method is manually called
+     it is because Threads in Thread pool lives way too much longer and hence ThreadLocal Data can leak and never dies
+     this scenario wont be there in virtual threads as virtual threads are not used in pool and lifetime is very short	 
+  c. Managing and handling InheritableThreadLocal is not easy
+     specially when we are creating so many virtual threads
+	 in case more nested virtual threads are created and copying these parent ThreadLocal to children will be taking huge space
+	 
+- Hence ScopedValue class is added
+  ScopedValue is very efficient way to pass data from parent to child in terms of local copy
+  In case of InheritableThreadLocal we needed to create complete new object copy in children taking value from parent
+  this is not efficient as it eats memory and specially in terms of virtual thread can have way too much memory
+  It also solves the issue like unbounded mutability of ThreadLocal and memory leak issue due to remove method not beeing called
+  
+- ScopedValue are same like ThreadLocal with having seperate copy per Thread but with some differences
+a. ScopedValue is immutable
+b. accesible only from dynamic method scope
+   once scope is defined we can only read in the dynamic scope
+hence ScopedValue = ThreadLocal - Unbounded context - Unbounded Value  
+
+- Implementation:
+  ScopedValue<User> scope=  ScopedValue.newInstance();
+  ScopedValue.callWhere(scope, new User("kanhayya", this :: handleMethod))
+  here we have bounded the scope of this user instance to only handleMethod
+- to get the value we should do scope.get()
+  but it can throw exception if thread is nt bound so please check scope.isBound()  
+  
+- meaning we can set boundary as to what thread can use the scope data in which method
+ even if thread is bound but get or isBound is called outside method scope it will give error and falsse respectively  
+ 
+- By default using above approach makes it bound to use the scope only within the provided method
+  if in same thread different method uses the scope to get value it gives exception
+  also even in same method if another thread tries to get the scope value it gives exception
+  same thing wont work even in case of ExecutorService
+  But in case we are using StructuredTaskScope then children tasks threads can access this
+  only way to pass scope data to another thread is via StructuredTaskScope
+  
+- Virtual Threads are implemented using Continuations and Coroutines  
+  difference b/w routines and Coroutines
+  routines are like method calling another method: once a method calls another method 
+  flow goes to second method and untill that is executed completely flow then only goes to main method
+  in case of coroutines once main method calls Coroutine based method
+  second method executes the task until a yield point is received then execution flow goes back to main method
+  and main method work is executed until the Coroutine task is started/continued again
+  method and coroutine are cooperating among themselves to get the job done, but flow of execution is like spiral
+  from main method to coroutine then it yields and then again main method is executed which after some time start the coroutine method
+  next time coroutine method do not start from beginning but from where it was yielded
+  continuation is the process of first storing stack data and then once coroutine is resumed it should initialize the stack state
+  so that work can be started from that point only and not from beginning
+  continuation is basically a data structure that holds 2 things
+  a. the stack variables and values
+  b. code pointer: so that once it contniues it should know from where to start the code execution
+  
+  Coroutines are available in javascript,python,Go,Kotlin etc
+  but in java it is not directly exposed to developers but used internally to implement virtual threads
+  since in jdk21 continuation classes are hidden in internal module, we need to demo this using jdk17
+
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman
+
+- How Virtual Threads are implemented under the hood
+
+-> Using VirtualThreadPerTaskExecutor a task is submitted
+   The executor creates one virtual thread for each task submitted
+   as it is super light weight in terms of memory, creation time, GC time and memory
+   then JVM also creates a Continuation object and within this continuation object it calls : ForkJoinPool.submit
+   meaning the Continuation c.run method will actually start to submit the task to ForkJoinPool service
+   then OS will schedule one of the Platform Thread from ForkJoinPool and start working on it untill a block IO operation comes
+   any blocking IO will enforce a yield in the ForkJoinPool Thread 
+   So ForkJoinPool Platform Thread will get unblocked and can work on other task submitted to the ForkJoinPool
+   Then VirtualThread will be kept in waiting state and assigned to the blocking operation
+   during this window the main Platform ForkJoinPool Thread is free for other work and still working on those
+   The moment VirtualThread gets unblocked it again call Continuation run method with ForkJoinPool.submit method
+   The Continuation object can now restore the Thread stack data and Code memory pointer
+   and remaining part of execution happens in the Platform ForkJoinPool Thread, untill another Blocking IO operation comes
+   then it again yeilds and then again on IO operation completion VirtualThread again run the continuation
+   so that remaining part of code can be executed by ForkJoinPool Platform Thread
+   this repeats untill all task is done, woooo!!!
+   
+- Up untill now we have learned a lot
+  but the code that we have written is outside the application server
+  in real life enterprise applications our code will be running inside JEE container like spring
+  and that will get executed inside a servlet container like tomcat,jetty,netty etc
+  now time to implement the same using spring boot and run the code inside tomcat servlet container  
+  
+- To be able to handle more concurrent users in lesser machines 
+  we can use virtual threads to server each request instead of platform thread  
+  
+- For every request spring boot creates a new virtual thread and do not pool the virtual thread
+  Virtual Thread gets GCed after the request is processed
+  
+- Assumption is that we will enahance the optimized capability of single application in isolation
+  we will assume that other IO providers have the capacity to handle good load
+  eg: File system should be able to handle more load, DB shall be able to provide more IOPs
+  , other microservice is able to provide more TPS etc
+  once that is setup then we are optimizing the single application machine
+  the problem we are solving: Even if the external IO providers are good
+  , why my application is not optimized to handle more load in less cost
+  
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman  
+
+- Example Scenario
+  We are using VirtualThread to serve user request
+  need to call n apis hence using structured task scope with n VirtualThread forked
+  now if we want timing stats as to how much time actually the VirtualThread took can be stored in ThreadLocal
+  but that is not efficient hence we must use ScopedValue, store each thread data locally by sharing same object
+  ScopedValue is ThreadLocal with better memory management, more tight scoped and immutable
+  also we can pass the ScopedValue dynamic scope via StructuredTaskScope so perfect use case is this
+  
+- Before running the scalability load test we should have
+  load server with apache jmeter as seperate machine
+  all other microservices should also be running in seprate machine
+  also ensure that the required amount of socket connections are set up
+  eg in mac and linux OS limit the max number of socket connections possible
+  we can update this specially in case of virtual thread enabled appliactions
+  
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman  
