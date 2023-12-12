@@ -1,0 +1,15 @@
+om shree ganeshaya namah
+om shree sita rama lakshman hanuma
+
+- To use spring boot 3 minimum tomcat version is 10.1.X and use jdk 21
+  or else tomcat server wont start with no error found
+  
+Steps to do migration
+a. update the spring boot version in pom.xml
+b. updte the jdk version in pom.xmlas well as IDE settings
+c. fix the imports from javax package to jakarta package
+   -> can use intellij IDE or eclipse support
+d. update the dependencies versions like update internal and external dependencies version
+e. for any external library that do not support jakarta package
+   -> transform maven library to jar then update the package in code and update the artifactory in jfrog
+f. for any config update the prefix from javax to jakarta
