@@ -33,6 +33,8 @@ public class BookRetrievalService {
 
             scope.join();
 
+            // could use teeing collector or even use partition by
+            //partitiom by state as failed or success
             subtasks.stream()
                     .filter(subtask -> subtask.state() == StructuredTaskScope.Subtask.State.FAILED)
                     .map(StructuredTaskScope.Subtask::exception)

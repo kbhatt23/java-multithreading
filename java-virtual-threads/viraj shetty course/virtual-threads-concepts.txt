@@ -20,13 +20,13 @@ om shree sita rama lakshman hanuman
 om shree ganeshaya namah
 om shree sita rama lakshman hanuman
 
-- Java has beed in the industry since more than 25 years, and its main charachterstic is simplicity
+- Java has been in the industry since more than 25 years, and its main charachterstic is simplicity
   since its inception it had simple way to create threads but creating too much is the problem
   java platfrom threads had scalability issues meaning to handle more task we need to create more threads
-  and creating more threads require more memory + too much context switching
+  and creating more threads require more memory + too much context switching + cpu time to create thread
   
 - Ways of handling requests in web server
-a. process per request: in early 1990s we used to server each request with its own process
+a. process per request: in early 1990s we used to serve each request with its own process
    this process runs a perl/c script and serve the client request
    this same process assigned to single request user will do all job: business logic + db calls + other api calls
    once the same process completes the task , process is destroyed
@@ -42,7 +42,7 @@ b. thread per request model
    in web server there is a thread pool and for each request one single thread is assigned end to end
    meaning for each request one thread work on cpu tasks + io tasks: during io tasks it sleeps
    thread is light weight in comparison to os thread or process hence more concurrency is achieved
-   in comparison to CDI this has more scalability and concurrency
+   in comparison to CGI this has more scalability and concurrency
    plus thread pool is created and hence latency is reduced as new process is not created not even thread
    also data like memory, db connections, socket connections can be now shared among these threads running inside single process   
    
@@ -52,7 +52,7 @@ b. thread per request model
   basically one java platform thread creates one OS thread each having 1 MB allocated space just to allow OS thread to work on
   Thread scheduling is not managed by JVM , completely owned by OS as actual worker is OS thread
   and there is one to one mapping b/w java threads and OS threads  
-  In case web server is doing IO operation that this thread actually holding 1MB space and actual OS thread resources is of no use
+  In case web server is doing IO operation then this thread actually holding 1MB space and actual OS thread resources is of no use
   the java thread and OS thread are basically eating memory and other resources with no use during IO operations
   While running java code we can define stack size using -xss and for heap , -xmx and -xms
 - One way to scale is to create more threads but since java threads are equivalent to OS threads
@@ -63,7 +63,7 @@ b. thread per request model
   hence good idea is to be able to create threads that work until it does and switch to another task if IO operation or blocking operation is going on
   this thread can resume the job once that IO task is unblocked  
   
-- We do below solutions to solve thread scalability and be able to hadnle more requests
+- We do below solutions to solve thread scalability and be able to handle more requests
 a. vertical scaling: very costly and has a limit as computer have max limit possible
 b. horizontal scaling: relatively less costly but have efficiency issues like IO task efficiency or resources  
    this means it is very bad to keep on increasing the nodes and servers if our application is not effectively using resources of single machine
@@ -144,7 +144,7 @@ c. Even though virtual threads are super light , we still should create optimal 
 d. JDK internal tools like JConsole, JVisualvm , profilers etc are not updated to support virtual threads
    It is because unlike platform threads , virtual threads will be in millions
    how will we show this in GUI tool is a big challenge
-e. structured concurrency is still in preview mode   
+e. structured concurrency and scoped values are still in preview mode   
 
 om shree ganeshaya namah
 om shree sita rama lakshman hanuman
@@ -179,7 +179,7 @@ c. Lock aquiring etc
   this makes it easier to understand and handle complex scenarios
 
 - Since Virtual Threads are cheap and super light weight we generally create a lot of them
-  unlike platform thread where we used to control creating too macny by using thread pool
+  unlike platform thread where we used to control creating too many by using thread pool
   for virtual thread no need to create thread pool but this causes a new problem:
    -> managing virtual thread in terms of memory
    This is helped by structured concurrency
@@ -196,7 +196,7 @@ c. Lock aquiring etc
   the structured concurrency provides classes that can ensure that the block of code gets executed and completed within time
   hence no memory leak in virtual threads, specially when we are creating a  lot of them
   structured concurrency provides structure to concurrent code in java specially helpful for virtual threads
-  ensures that the code block will get started and compelted within some time so that there is no memoyb leak
+  ensures that the code block will get started and completed within some time so that there is no memory leak
   ensuring this memory management helps in case of virtual threads as we create a lot of them
   also adds code readability/maintainability as code is more structured
   eg: try with resources in executorService is basic example of structured concurrency
@@ -205,7 +205,7 @@ c. Lock aquiring etc
   -> in jdk 21 the ExecutorService interface extends AutoCloseable for this purpose  
   this try with resources is good example of structure concurrency but not good enough
   lets say in block of code we have 2-3 futures , if one fails there is no point main thread blocking and waiting for other future threads to complete
-  inface of one future task gives error other worker threads should stop working and main thread should also be unblocked
+  in case of one future task gives error other worker threads should stop working and main thread should also be unblocked
   this way we are saving memory and cpu time for both worker as well as main thread
   what is needed here is if any of worker thread fails , error notification shall be sent to other worker threads
   worker threads should stop working and then the main thread shall be unblocked
@@ -222,7 +222,7 @@ c. joinpoint is received within the scope/block
 d. main thread merges all the data from all the children thread
 e. scope/block closes
 use cases as to when joinpoint is received
-a. When all the task completes succesfully, so that main can combine results
+a. When all the task completes (does not matter successful or failed but completes), so that main can combine results
 b. When first error is received, so that other threads can be stopped and scope closes to unblock main thread
 c. when first child sends success message: like anyof
    in this case once first success response is received all other children should be stopped
@@ -370,7 +370,7 @@ hence ScopedValue = ThreadLocal - Unbounded context - Unbounded Value
   but it can throw exception if thread is nt bound so please check scope.isBound()  
   
 - meaning we can set boundary as to what thread can use the scope data in which method
- even if thread is bound but get or isBound is called outside method scope it will give error and falsse respectively  
+ even if thread is bound but get or isBound is called outside method scope it will give error and false respectively  
  
 - By default using above approach makes it bound to use the scope only within the provided method
   if in same thread different method uses the scope to get value it gives exception
@@ -461,3 +461,11 @@ om shree sita rama lakshman hanuman
   
 om shree ganeshaya namah
 om shree sita rama lakshman hanuman  
+
+ExecutorCompletionService is a wrapper class on top of executor service
+it is based on decorator design pattern
+in general executor service if we have n future then we do get to block the thread and get the result
+but there is no gurantee that which future will come first will get unblocked
+for this we can use ExecutorCompletionService 
+just pass the executorservice instance to ExecutorCompletionService and then whatever future returns first it give that specific object
+so this way if first callable task is done and we need to do another task independent of second callable we acn use this
