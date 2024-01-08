@@ -1,2 +1,221 @@
 om shree ganeshaya namah
 om shree sita rama lakshman hanuman
+
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman
+
+- Virtual Threads enables huge scalability without compromising code quality, code maintainability
+   cost of server resources -> write sequential code but unblock platform threads during blocking IO calls
+   
+- concept related to threads , process ,cpu , context switching is independent of application process 
+  for any applicatio this concept remains same
+  the memory allocated per thread is done by os and it can be configured for each process
+  in java process we can define it but there is 1 mb by default except mac os m chip which is 2mb
+  hence it can be dependent upon the operating system  
+  
+- the name is virtual thread because it gives illusion we have created that many threads
+  its actually just simple java objects and not actually thread like platform thread
+  only the contract is same like methods , runnable , join etc
+  virtual thread have same contract but they have polymorphic implementation
+  hence virtual thread can not be seen directly by os for scheduling
+  using virtual threads we are submitting the tasks to a fork join pool (seperate from common fork join pool)  
+  
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman
+
+- If we have a CPU intensive task and execute it via platform and virtual thread seperately
+  in case of virtual thread it will look like individual tasks have completed in less time or expected time
+  in case of platform thread it will look like that individual tasks have taken more time
+  it is because in case of platform thread all tasks are started at once
+  -> since os can do context switching individual task time will always be more
+  hence if there are 10 cores and we submitted 20 cores each individual tasks will take more time
+  however overall time to complete all 20 tasks will be same for platform and virtual thread
+  in case of virtual thread tasks are started 10(number of cores ) at a time
+  hence all tasks will take same time  
+  for pure cpu intensive tasks it is preferred to use platform threads
+  
+- The platform threads are scheduled by OS scheduler
+  the virtual threads are scheduled by JVM
+  a dedicated forkjoin pool (seperate from common fork join pool) is allocated
+  the number of cores of this dedicated fork join pool is = number of processors
+  we saw in code demo earlier that each time from even queue n tasks from virtual threads gets started
+  we can customize this thread pool to use more cores but for cpu intensive tasks it is bad idea
+  for production systems it is not advised to customize this fork join pool  
+  
+- When we have more threads than number of processor cores then threads compete to get executed by these available processors
+  there are certain scheduling policy that controls it
+  a. preemptive scheduling
+     used by platform thread , one thread task will be executed by processor for some time, pauses it
+	 then switch to another thread and execute it for some time and then again switches to another thread
+	 this is called context switching
+	 platform threads are scheduled by OS using this scheduling technique
+	 so if there are 20 thread tasks and 10 cores then in preemptive all the tasks are submitted and started at one go
+	 however there will be context switching so it will look as if single task took more time
+	 but time to complete all batch of tasks will be same as that of virtual threads
+	 os scheduling depend on thread priority. time taken in past, available threads in pool etc
+	 preemptive scheduling is platform dependent as based on os and hardware it can be implemented in different ways
+  b. cooperative scheduling
+     used by virtual thread
+     once a task is submitted processor will take another task only if whole task is completed or this thread calls Thread.yeild()
+     meaning no context switching, also number of task to be picked in one go will be number of cores
+     Thread priority will always be 5 for virtual threads and can not be modified
+     meaning all virtual threads have same and equal priority	 
+     this yeild is taken care by coroutine framework/data structure by jdk internal library     
+	 
+- Hence it is always better to use platform threads in case of cpu intensive tasks
+  virtual thread is good for i/o intensive tasks
+  
+- If we are using virtual thread it follows cooperative scheduling per processor core basis
+  meaning if one processor core is assigned to one thread task it will switch to other thread task only if this is completed
+  either : this task completes succesfully or we do Thread.yeild or there is a blocking i/o operation that yields it  
+  so if we submit 10 tasks or lower tasks in case cores count is 10
+  then all will run in parrallel
+  if 20 tasks are assigned then first 10 completes and then only other 10 will be picked like a batch
+  however if there is i/o calls then it picks another thread task from internal queue
+  
+- While using virtual threads and synchronized block
+  if within the synchronized block there is CPU task then no issues
+  but if there is blocking i/o call then platform thread wont be unmounted: which is bad
+  anyway for cpu task we do not use virtual threads 
+  but if we are using virtual thread for   
+  
+- The above mentioned issue is called thread pinning
+  this can occur if virtual threads are used and in code there is a synchronized block
+  and within block there is blocking i/o call
+  we can even trace any pinned location in code using jvm System property:
+  System.setProperty("jdk.tracePinnedThreads", "short"); 
+  
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman
+
+- In JDK 21 Executors are AutoCloseable meaning in close method it call shutdown and await methods
+  hence we can use with try with resources
+  however this has to be used when after tasks are submitted and completed the service must shutdown
+  and do not expect more task : but spring boot app where pool must live longer then no need of try with resources
+  in case of virtual thread where we are calling n apis within a structure it is good to use with try with resources
+  
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman
+
+- virtual threads are never meant to be pooled and its bad idea to use fixedThread pool excecutor with factor as Thread.ofVirtual
+  as with fixedThread it will pool the virtual threads  
+  jdk platform team have a plan to solve this but best practise issue
+  to never pool a virtual thread always create one virtual thread per task
+  now in case we want concurrency max limit we could have used fixedThreadpool with factory as Virtual Thread
+  but that will pool the virtual thread and it breaks the priciple
+  hence we must use semaphore always with no pooling and one virtual thread per task to limit concurrency
+  
+- If we use virtual threads and inside runnable we have semaphore
+  then if max permits is there then platform thread will be unmounted and it can work on other task
+  virtual thread will be blocked until semaphore permit is freed and then a new platform thread will be assigned to this virtual thread
+  meaning just like blocking i/o operation same behavior will be for Lock, ReentrantLock, Semaphore etc
+  meaning any code that is concurrently blocking a thread and if thread is virtual then platform thread will be freed
+  and the moment the thread synchronizer frees platform thread will again be mounted to this virtual thread  
+  
+- Semaphore with permits 1 behaves same like ReentrantLock
+  only one thread can access the method at a time
+  however in case of ReentrantLock , only the thread that aquired the lock can unlock 
+  if a thread that has not aquired a lock tries to unlock gives exception
+  in semaphore one thread can aquire and any other thread can release the permit count  
+  
+- Semaphore is like a thread synchronizer which allow limited threads to enter a critical section
+  like setting max concurrency level for a method that calls external api calls
+  similar is Lock but that allows only one thread to enter critical section
+  in all of these synchronizer if virtual thread is used then platform fork join thread will be freed for other tasks
+  and virtual thread can unmount it back once lock is aquired or semaphore permit is aquired
+
+- Difference b/w Semaphore and Lock
+a. We can define n number of thread to be allowed for critical method section
+   in Lock only one thread is allowed
+b. in Single Thread Lock , only the same Thread can unlock which aquired lock
+   if any other thread release the lock it gives exception
+   in semaphore any thread can release or aquire based on available count
+c. in semaphore one thread can request for n permits available then only it enters
+   and after critical section exceution it can release n number of permits which can be different than what was needed to aquire
+  this is very strange and rare case   
+  
+- Reasons to understand completablefuture
+  even though sync code can behave in asyc fashio due to virtual threads , completablefuture is still needed
+a. it has declarative pipeline with error handling
+b. using future is not as fluent as completablefuture
+c. already most of the projects are using completablefuture , we can not make it obsolete suddenly
+  instead we should integrate virtual threads with completablefuture or work them together  
+  
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman  
+
+- Preview Features in jdk does not mean they are untested or have bugs
+  they are open to change in terms of API as they are open for suggestion from the developers
+  do not use preview features live in production as in future releases the API methods might change
+  there wont be bugs or feature will still be tested by jdk though
+  It is expected that scoped values and structured concurrency will be live for prod use in early 2025
+  
+- ThreadLocal is used extensively in spring framework
+  in spring boot we have one thread assigned to one connection
+  and ThreadLocal is used to write and read the data among multiple layers/filters/chains etc
+  without passing them in object parameters
+  since each thread will have its own copy of data it can be used there
+  eg: usertoken, user priviledges is saved in ThreadLocal and in remaining chain/filters it used to read data
+  this way we need not to pass the data in method parameters
+  advantage of ThreadLocal is that it is thread safe and need not to be synchronized  
+  it is because for each thread it has its own copy so no chance of reace condition and hence no need of synchronized blocks
+
+- Design flaws with ThreadLocal
+1. It is mutable
+2. Even when data is not in use it is not GCed and hence poor use of memory
+   until me manually call the clear method hence can cause memory leaks when we have huge amount of threads  
+3. ineffective way of memory handling of inhertable thread local
+4. should always be used as static final field at class level
+   but developers misuse it by creating withing method
+   we should have one ThreadLocal object and internally in concurrent hashmap there shall be entry for each thread
+  no need to create different object for each thread but people make this mistake even in production
+  specially in springboot where thread per task is created at tomcat level 
+  hence single ThreadLocal object shall be created at field level and used in method
+  as for each tomcat thread it will have different entry in hashmap and hence no chance of race condition
+
+- ScopedValues are better way to handle ThreadLocal specially in virtual threads
+//mimick Spring boot like framework
+//have fixed thread pool each having thread local
+//each thread data will be safe local to itself and without passing param we can use it
+//no need to pass the object in method param
+
+- once in threadlocal data is set and used and complete request is processed
+  we must call remove method of threadlocal or else it will cause memory leak
+  
+- By Default ThreadLocal do not help when one thread creates another thread
+  children thread will have its own copy
+  but sometimes we need children thread to read data of parent thread
+  for that inhertable thread local was created but that requires cloning copying and syncing
+  modification done by parent is visible to children but not vice verca
+  this copying and cloning makes it very bad in case of virtual threads in terms of performance and memory  
+  
+- Structured task scope have various type
+  anySuccess can be useful in uber like scenarios
+  request is sent to n number of drivers at one time
+  the first driver that selects it then it is unblocked and other requests ar cancelled  
+  
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman  
+
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman
+
+om shree ganeshaya namah
+om shree sita rama lakshman hanuman
+
+- Scalability of an application means ability to handle more number of concurrent users/requests
+  without compromising the response latency and still be using the resources efficiently
+  
+- Even though we are using virtual thread to process request
+  we must be calling external API by some client
+  it is advised that we must use virtual thread for those clients
+  like RestClient, RestTemplate or Okhttp client
+  these also must use virtual thread if possible  
+  
+- Jmeter best practise
+a. never run the actual performance test/ load test using GUI always use CLI
+b. disable all the listeners
+c. for first iterations let the warmup happen: ignore warmup test for few minutes
+  do the warmup and ignore the result for few minutes of these warmup duration
+d. jmeter must be running in another machine , should be other than the actual api machine
+
